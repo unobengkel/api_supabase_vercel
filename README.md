@@ -54,15 +54,15 @@ cp .env.example .env
 Berikut adalah contoh isi dari file `.env.example` yang harus Anda sesuaikan:
 ```env
 # Konfigurasi Supabase
-SUPABASE_URL=https://wqqrjsjytlcvkkgziana.supabase.co
-SUPABASE_KEY=sb_publishable_nqnraHg2CUUot95hRWv5fA_ZuDozNyM
+SUPABASE_URL=https://xxxxxxxxxxxxxxx.supabase.co
+SUPABASE_KEY=xxxxxxxxxxxxxxxxxxxxxxxxx
 
 # Konfigurasi Bucket & Tabel Supabase
-TARGET_BUCKET	=	photos
-TARGET_TABLE	=	photos_data
+TARGET_BUCKET=guestcam-photos
+TARGET_TABLE=photos
 
 # Konfigurasi AI Server
-AI_SERVER_URL	=	https://www.kameratamu.com/api/apply-filter
+AI_SERVER_URL=xxxxxxxxxxxxxxxxxxxxx
 ```
 
 Buka file `.env` dan sesuaikan nilainya dengan kredensial Supabase dan AI Server produksi Anda.
