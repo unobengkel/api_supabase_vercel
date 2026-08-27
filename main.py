@@ -49,29 +49,28 @@ HEADERS_SUPA = {
 # ==========================================
 # FUNGSI HELPER
 # ==========================================
-
 def get_event_settings(slug: str):
     """Ambil Event ID, Filter Settings, dan Capture Settings dari Supabase"""
     rpc_url = f"{SUPABASE_URL}/rest/v1/rpc/get_event_by_slug"
     res_rpc = requests.post(rpc_url, headers=HEADERS_SUPA, json={"p_slug": slug})
 
-    # Cache hasil .json() agar tidak dipanggil dua kali
+    print(f"[DEBUG] RPC Status Code: {res_rpc.status_code}", flush=True)
+    
     rpc_data = res_rpc.json() if res_rpc.status_code == 200 else []
-    if not rpc_data:
+    if not rpc_data or len(rpc_data) == 0:
+        print(f"[ERROR] Slug '{slug}' tidak ditemukan atau data kosong", flush=True)
         raise HTTPException(status_code=404, detail="Event slug tidak ditemukan.")
-
-    # Guard IndexError jika list tidak terduga kosong
-    if len(rpc_data) == 0:
-        raise HTTPException(status_code=404, detail="Data event kosong.")
 
     event_data = rpc_data[0]
     event_id = event_data['id']
 
-    # Ambil Filter Settings
+    # Log Ambil Filter Settings
     filter_url = f"{SUPABASE_URL}/rest/v1/filter_settings?event_id=eq.{event_id}&select=enabled,prompt,model,resolution"
     res_filter = requests.get(filter_url, headers=HEADERS_SUPA)
     filter_data = res_filter.json() if res_filter.status_code == 200 else []
     filter_settings = filter_data[0] if filter_data else {"enabled": False}
+
+    print(f"[DEBUG] Raw Filter Settings dari DB: {filter_settings}", flush=True)
 
     # Ambil Capture Settings
     capture_url = f"{SUPABASE_URL}/rest/v1/capture_settings?event_id=eq.{event_id}&select=aspect_ratio"
@@ -85,6 +84,7 @@ def get_event_settings(slug: str):
         "filter": filter_settings,
         "capture": capture_settings
     }
+
 
 def apply_ai_filter(image_bytes: bytes, settings: dict):
     """Kirim gambar ke server AI jika Filter diaktifkan"""
