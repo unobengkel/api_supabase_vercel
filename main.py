@@ -36,6 +36,9 @@ AI_SERVER_URL = os.getenv("AI_SERVER_URL")
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise RuntimeError("SUPABASE_URL dan SUPABASE_KEY harus diatur di dalam file .env")
 
+if not AI_SERVER_URL:
+    print("[WARNING] AI_SERVER_URL tidak diatur di .env. Filter AI tidak akan berfungsi.")
+
 # Headers standar untuk komunikasi dengan API Supabase
 HEADERS_SUPA = {
     "apikey": SUPABASE_KEY,
@@ -51,22 +54,30 @@ def get_event_settings(slug: str):
     """Ambil Event ID, Filter Settings, dan Capture Settings dari Supabase"""
     rpc_url = f"{SUPABASE_URL}/rest/v1/rpc/get_event_by_slug"
     res_rpc = requests.post(rpc_url, headers=HEADERS_SUPA, json={"p_slug": slug})
-    
-    if res_rpc.status_code != 200 or not res_rpc.json():
+
+    # Cache hasil .json() agar tidak dipanggil dua kali
+    rpc_data = res_rpc.json() if res_rpc.status_code == 200 else []
+    if not rpc_data:
         raise HTTPException(status_code=404, detail="Event slug tidak ditemukan.")
-    
-    event_data = res_rpc.json()[0]
+
+    # Guard IndexError jika list tidak terduga kosong
+    if len(rpc_data) == 0:
+        raise HTTPException(status_code=404, detail="Data event kosong.")
+
+    event_data = rpc_data[0]
     event_id = event_data['id']
 
     # Ambil Filter Settings
     filter_url = f"{SUPABASE_URL}/rest/v1/filter_settings?event_id=eq.{event_id}&select=enabled,prompt,model,resolution"
     res_filter = requests.get(filter_url, headers=HEADERS_SUPA)
-    filter_settings = res_filter.json()[0] if res_filter.json() else {"enabled": False}
+    filter_data = res_filter.json() if res_filter.status_code == 200 else []
+    filter_settings = filter_data[0] if filter_data else {"enabled": False}
 
     # Ambil Capture Settings
     capture_url = f"{SUPABASE_URL}/rest/v1/capture_settings?event_id=eq.{event_id}&select=aspect_ratio"
     res_capture = requests.get(capture_url, headers=HEADERS_SUPA)
-    capture_settings = res_capture.json()[0] if res_capture.json() else {"aspect_ratio": "1:1"}
+    capture_data = res_capture.json() if res_capture.status_code == 200 else []
+    capture_settings = capture_data[0] if capture_data else {"aspect_ratio": "1:1"}
 
     return {
         "event_id": event_id,
@@ -99,6 +110,11 @@ def apply_ai_filter(image_bytes: bytes, settings: dict):
         "Accept": "*/*"
     }
     
+    # Validasi AI_SERVER_URL sebelum request
+    if not AI_SERVER_URL:
+        print("[WARNING] AI_SERVER_URL tidak dikonfigurasi. Fallback ke gambar asli.")
+        return image_bytes, False
+
     try:
         # Timeout ditingkatkan ke 60 detik
         res = requests.post(AI_SERVER_URL, json=payload, headers=headers, timeout=60)
