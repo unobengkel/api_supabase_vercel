@@ -26,11 +26,11 @@ app.add_middleware(
 # ==========================================
 # KONFIGURASI SUPABASE & AI SERVER DARI .ENV
 # ==========================================
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 TARGET_BUCKET = os.getenv("TARGET_BUCKET", "photos")
 TARGET_TABLE = os.getenv("TARGET_TABLE", "photos_data")
-AI_SERVER_URL = os.getenv("AI_SERVER_URL")
+AI_SERVER_URL = os.getenv("AI_SERVER_URL", "")
 
 # Validasi jika variabel .env tidak ditemukan
 if not SUPABASE_URL or not SUPABASE_KEY:
